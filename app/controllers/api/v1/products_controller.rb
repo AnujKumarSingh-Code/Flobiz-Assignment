@@ -2,6 +2,8 @@ module Api
   module V1
     class ProductsController < ApplicationController
       before_action :authenticate_business!, only: [:create, :update, :destroy]
+      before_action :reject_suspended_business!, only: [:create, :update, :destroy]
+      ### Added the line above
       before_action :set_product, only: [:show, :update, :destroy]
 
       def index
@@ -14,13 +16,15 @@ module Api
       end
 
       def show
-        render json: ProductSerializer.new(@product)
+        # render json: ProductSerializer.new(@product)
+        render json: @product, status: :ok
       end
 
       def create
         @product = current_business.products.build(product_params)
         if @product.save
-          render json: ProductSerializer.new(@product), status: :created
+          # render json: ProductSerializer.new(@product), status: :created
+          render json: @product, serializer: ProductSerializer, status: :created
         else
           render json: { errors: @product.errors.full_messages }, status: :unprocessable_entity
         end
@@ -28,7 +32,8 @@ module Api
 
       def update
         if @product.update(product_params)
-          render json: ProductSerializer.new(@product)
+          # render json: ProductSerializer.new(@product)
+          render json: @product, serializer: ProductSerializer
         else
           render json: { errors: @product.errors.full_messages }, status: :unprocessable_entity
         end
@@ -60,7 +65,13 @@ module Api
       def product_params
         params.require(:product).permit(:name, :description, :price, :quantity, :sku)
       end
-
+      ####
+      def reject_suspended_business!
+        if current_business&.status == 'suspended'
+          render json: { errors: ['Account suspended'] }, status: :forbidden
+        end
+      end
+      ####
       def authenticate_business!
         unless current_business
           render json: { errors: ['Not Authorized'] }, status: :unauthorized

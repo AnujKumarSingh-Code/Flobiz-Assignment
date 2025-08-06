@@ -14,7 +14,8 @@ module Api
       end
 
       def signup
-        user = User.new(user_params)
+        # user = User.new(user_params)
+        user = User.new(user_params.merge(role: 'customer'))
         if user.save
           token = JsonWebToken.encode(user_id: user.id)
           render json: { token: token, user: UserSerializer.new(user) }, status: :created
@@ -26,8 +27,12 @@ module Api
       private
 
       def user_params
-        params.require(:user).permit(:name, :email, :password, :password_confirmation, :role, :preferences)
+        params.require(:user).permit(:name, :email, :password, :password_confirmation, :preferences)
       end
     end
   end
 end
+
+
+
+
