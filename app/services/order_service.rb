@@ -27,21 +27,47 @@ class OrderService
          .per(per_page)
   end
 
+  # def process_order
+  #   @order.order_items.each do |item|
+  #     product = item.product
+  #     product.update!(quantity: product.quantity - item.quantity)
+  #   end
+  #   @order.update!(status: 'processing')
+  # end
+
   def process_order
-    @order.order_items.each do |item|
-      product = item.product
-      product.update!(quantity: product.quantity - item.quantity)
+    ActiveRecord::Base.transaction do
+      @order.order_items.each do |item|
+        product = Product.lock.find(item.product_id)              
+        raise InsufficientStockError, "#{product.name} sold out" \
+          if product.quantity < item.quantity
+
+        product.update!(quantity: product.quantity - item.quantity)
+      end
+      @order.update!(status: 'processing')
     end
-    @order.update!(status: 'processing')
   end
 
+
+
+  # def cancel_order
+  #   @order.order_items.each do |item|
+  #     product = item.product
+  #     product.update!(quantity: product.quantity + item.quantity)
+  #   end
+  #   @order.update!(status: 'cancelled')
+  # end
+
   def cancel_order
-    @order.order_items.each do |item|
-      product = item.product
-      product.update!(quantity: product.quantity + item.quantity)
+    ActiveRecord::Base.transaction do
+      @order.order_items.each do |item|
+        product = Product.lock.find(item.product_id)             
+        product.update!(quantity: product.quantity + item.quantity)
+      end
+      @order.update!(status: 'cancelled')
     end
-    @order.update!(status: 'cancelled')
   end
+
 
   def complete_order
     @order.update!(status: 'completed')

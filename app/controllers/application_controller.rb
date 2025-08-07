@@ -21,8 +21,13 @@ class ApplicationController < ActionController::API
         elsif decoded[:business_id]
           @current_business = Business.find(decoded[:business_id])
         end
-      rescue JWT::ExpiredSignature, JWT::DecodeError
-        render json: { errors: ['Not Authenticated'] }, status: :unauthorized
+      # rescue JWT::ExpiredSignature, JWT::DecodeError
+      #   render json: { errors: ['Not Authenticated'] }, status: :unauthorized
+
+      rescue JWT::ExpiredSignature
+        render json: { errors: ['Token has expired. Please log in again.'] }, status: :unauthorized
+      rescue JWT::DecodeError
+        render json: { errors: ['Invalid token. Please log in again.'] }, status: :unauthorized
       end
     else
       render json: { errors: ['Not Authenticated'] }, status: :unauthorized

@@ -5,10 +5,13 @@ class Order < ApplicationRecord
 
   validates :total_amount, presence: true, numericality: { greater_than: 0 }
   validates :status, presence: true, inclusion: { in: %w[pending processing completed cancelled] }
-
+  validates :product_id, uniqueness: { scope: :order_id, message: "is already added to the order" }
+  ### Added this line above
+  
   accepts_nested_attributes_for :order_items
 
-  before_validation :calculate_total_amount
+  # before_validation :calculate_total_amount
+  before_save :calculate_total_amount
 
   def cancel
     return false unless can_be_cancelled?
@@ -21,8 +24,11 @@ class Order < ApplicationRecord
 
   private
 
+  # def calculate_total_amount
+  #   self.total_amount = order_items.sum { |item| item.quantity * item.price_at_time_of_order }
+  # end
   def calculate_total_amount
-    self.total_amount = order_items.sum { |item| item.quantity * item.price_at_time_of_order }
+    self.total_amount = order_items.to_a.sum { |item| item.quantity * item.price_at_time_of_order.to_f }
   end
 
   def can_be_cancelled?

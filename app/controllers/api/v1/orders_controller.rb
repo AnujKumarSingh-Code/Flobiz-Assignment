@@ -8,12 +8,15 @@ module Api
         @orders = current_user.orders.page(params[:page]).per(params[:per_page])
         render json: ActiveModel::Serializer::CollectionSerializer.new(
           @orders,
-          serializer: OrderSerializer
+          serializer: OrderSerializer,
+          ## Added the below line
+          meta: pagination_meta(@orders)
         )
       end
 
       def show
-        render json: OrderSerializer.new(@order)
+        # render json: OrderSerializer.new(@order)
+        render json: @order, serializer: OrderSerializer
       end
 
       def create
@@ -21,7 +24,8 @@ module Api
         if @order.save
           order_service = OrderService.new(@order)
           order_service.process_order
-          render json: OrderSerializer.new(@order), status: :created
+          # render json: OrderSerializer.new(@order), status: :created
+          render json: @order
         else
           render json: { errors: @order.errors.full_messages }, status: :unprocessable_entity
         end
@@ -43,6 +47,8 @@ module Api
 
       def order_params
         params.require(:order).permit(
+          :total_amount,
+          :status,
           order_items_attributes: [:product_id, :quantity]
         )
       end

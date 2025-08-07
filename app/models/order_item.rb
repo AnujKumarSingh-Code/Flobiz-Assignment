@@ -5,11 +5,16 @@ class OrderItem < ApplicationRecord
   validates :quantity, presence: true, numericality: { greater_than: 0 }
   validates :price_at_time_of_order, presence: true, numericality: { greater_than: 0 }
 
-  before_validation :set_price_at_time_of_order
+  # before_validation :set_price_at_time_of_order
+  before_create :set_price_at_time_of_order
 
   private
 
   def set_price_at_time_of_order
-    self.price_at_time_of_order = product.price if product
+    # self.price_at_time_of_order = product.price if product
+    self.price_at_time_of_order ||= product.price
   end
 end
+
+
+
